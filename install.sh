@@ -114,8 +114,8 @@ if [ ! -f server.config.yaml ]; then
 
   # Fetch the latest Linux binary.
   LINUX_BIN=\$(curl -s https://api.github.com/repos/velocidex/velociraptor/releases/latest \
-    | jq -r '[.assets[] | select(.name | test("linux-amd64$"))][0].browser_download_url')
-    
+    | jq -r '[.assets | sort_by(.created_at) | reverse | .[] | .browser_download_url | select(test("linux-amd64\$"))][0]')
+
   wget -O /opt/velociraptor "\$LINUX_BIN"
   chmod +x /opt/velociraptor
 
@@ -123,7 +123,7 @@ if [ ! -f server.config.yaml ]; then
   ./velociraptor config generate > server.config.yaml --merge '{
     "Frontend": {"hostname": "$IP_ADDRESS"},
     "API": {"bind_address": "0.0.0.0"},
-    "GUI": {"public_url": "https://$IP_ADDRESS:8889/", "bind_address": "0.0.0.0"},
+    "GUI": {"public_url": "https://$IP_ADDRESS:8889/app/index.html", "bind_address": "0.0.0.0"},
     "Monitoring": {"bind_address": "0.0.0.0"},
     "Logging": {"output_directory": "/opt/vr_data/logs", "separate_logs_per_component": true},
     "Client": {"server_urls": ["https://$IP_ADDRESS:8000/"], "use_self_signed_ssl": true},
