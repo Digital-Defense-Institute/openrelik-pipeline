@@ -114,8 +114,8 @@ if [ ! -f server.config.yaml ]; then
 
   # Fetch the latest Linux binary.
   LINUX_BIN=\$(curl -s https://api.github.com/repos/velocidex/velociraptor/releases/latest \
-    | jq -r '[.assets | sort_by(.created_at) | reverse | .[] | .browser_download_url | select(test("linux-amd64\$"))][0]')
-
+    | jq -r '[.assets[] | select(.name | test("linux-amd64$"))][0].browser_download_url')
+    
   wget -O /opt/velociraptor "\$LINUX_BIN"
   chmod +x /opt/velociraptor
 
