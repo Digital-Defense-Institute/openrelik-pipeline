@@ -104,7 +104,7 @@ These are configured to hit each available endpoint:
 
 You can configure them to run automatically by going to `Server Events` in the Velociraptor GUI and adding them to the server event monitoring table. 
 
-By default, they are configured to run when the `Windows.KapeFiles.Targets` artifact completes on an endpoint. 
+By default, they are configured to run when the `Windows.Triage.Targets` artifact completes on an endpoint. 
 
 It will zip up the collection, and send it through the pipeline into OpenRelik for processing.
 

@@ -7,7 +7,7 @@ type: SERVER_EVENT
 
 parameters:
    - name: ArtifactNameRegex
-     default: "Windows.KapeFiles.Targets"
+     default: "Windows.Triage.Targets"
      description: A regular expression to select which artifacts to upload
    - name: Host
      default: "http://openrelik-pipeline:5000"
