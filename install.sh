@@ -15,6 +15,33 @@ EOF
 # Change directory to timesketch
 cd timesketch 
 
+# --- FIX: Disable EVTX message-string expansion that crashes psort ---
+FORMATTER_FILE="/opt/timesketch/etc/timesketch/plaso_formatters.yaml"
+
+if [ -f "$FORMATTER_FILE" ]; then
+  echo "Patching Plaso EVTX formatter to avoid winevt_rc crash..."
+
+  cp -a "$FORMATTER_FILE" "${FORMATTER_FILE}.bak"
+
+  # Remove the custom helper that triggers winevt_rc
+  sed -i '/^custom_helpers:/,/^message:/{
+    /^custom_helpers:/d
+    /identifier: '\''windows_eventlog_message'\''/d
+    /output_attribute: '\''message_string'\''/d
+  }' "$FORMATTER_FILE"
+
+  # Remove the {message_string} line from message section
+  sed -i "/^[[:space:]]*-[[:space:]]*'{message_string}'[[:space:]]*$/d" "$FORMATTER_FILE"
+
+  echo "Formatter patched successfully."
+else
+  echo "WARNING: Formatter file not found at $FORMATTER_FILE"
+fi
+# --------------------------------------------------------------------
+
+# Restart Timesketch worker so change takes effect
+docker compose restart timesketch-worker
+
 # Create Timesketch user
 echo -e "${TIMESKETCH_PASSWORD}\n${TIMESKETCH_PASSWORD}" | \
   docker compose exec -T timesketch-web tsctl create-user "admin"
@@ -35,7 +62,57 @@ docker compose down
 sed -i 's/127\.0\.0\.1/0\.0\.0\.0/g' /opt/openrelik/docker-compose.yml
 sed -i "s/localhost/$IP_ADDRESS/g" /opt/openrelik/config.env
 sed -i "s/localhost/$IP_ADDRESS/g" /opt/openrelik/config/settings.toml
+
+# --- Ensure legacy storage_path is present for older server images ---
+CONFIG_TOML="/opt/openrelik/config/settings.toml"
+LEGACY_STORAGE_PATH='storage_path = "/usr/share/openrelik/data/artifacts"'
+
+# Ensure [server] section exists
+grep -q '^\[server\]' "$CONFIG_TOML" || echo -e '\n[server]' >> "$CONFIG_TOML"
+
+# If storage_path isn't defined anywhere, add it under [server]
+grep -q '^[[:space:]]*storage_path[[:space:]]*=' "$CONFIG_TOML" || \
+  sed -i "/^\[server\]/a $LEGACY_STORAGE_PATH" "$CONFIG_TOML"
+# -------------------------------------------------------------------
+
 docker compose up -d
+
+# --- Upgrade Plaso inside openrelik-worker-plaso to match Timesketch (PPA gift/stable) ---
+echo "Upgrading Plaso in openrelik-worker-plaso to match Timesketch..."
+
+# Wait a moment for containers to be ready (optional but helps avoid exec race)
+sleep 3
+
+docker compose exec -T openrelik-worker-plaso bash -lc '
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update
+
+# Ensure add-apt-repository is available
+if ! command -v add-apt-repository >/dev/null 2>&1; then
+  apt-get install -y software-properties-common
+fi
+
+# Add gift/stable PPA if not already present
+if ! grep -Rqs "ppa.launchpadcontent.net/gift/stable" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+  add-apt-repository -y ppa:gift/stable
+fi
+
+apt-get update
+
+# Install/upgrade Plaso packages from the PPA
+apt-get install -y plaso-data plaso-tools python3-plaso
+
+echo "Plaso versions now:"
+dpkg --list | grep plaso || true
+log2timeline.py --version || true
+psort.py --version || true
+'
+
+# Restart the worker so it picks up the new plaso tooling
+docker compose restart openrelik-worker-plaso
 
 # Configure OpenRelik API key 
 OPENRELIK_API_KEY="$(docker compose exec openrelik-server python admin.py create-api-key admin --key-name "demo")"

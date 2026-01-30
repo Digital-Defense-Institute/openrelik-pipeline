@@ -91,7 +91,7 @@ You can add them in the Velociraptor GUI in one of two ways:
     * Click `Configure Parameters`  
     * Click on `Server.Import.ArtifactExchange`   
     * For the `ExchangeURL` enter the URL of `velociraptor_artifacts.zip` found [here](https://github.com/Digital-Defense-Institute/openrelik-pipeline/releases/latest)  
-    * For the prefix, choose something relevant, like `OpenRelikPipeline.`  
+    * For the tag, choose something relevant, like `OpenRelikPipeline`  
     * Leave `ArchiveGlob` as is  
     * Click `Launch`  
     * You should now see all of them as `Server Monitoring` artifacts in the `Artifacts` page  
@@ -108,7 +108,34 @@ By default, they are configured to run when the `Windows.Triage.Targets` artifac
 
 It will zip up the collection, and send it through the pipeline into OpenRelik for processing.
 
+**Steps:**  
+1. Navigate to `Server Events` 
+  ![alt text](screenshots/server_events_step-0.png)
+2. Click `Update server monitoring table`
+  ![alt text](screenshots/server_events_step-1.png)
+3. Choose one or more triage artifacts to run in the background and click Launch
+  ![alt text](screenshots/server_events_step-2.png)
+4. The newly installed monitoring artifacts will soon show up in the `Select artifact` dropdown with logs
+  ![alt text](screenshots/server_events_step-3.png)
+
+### Importing Triage Artifacts
+
+The main Velociraptor package no longer includes the necessary triage artifacts by default.  
+
+You can download the `Windows.Triage.Targets` artifact from [here](https://triage.velocidex.com/docs/windows.triage.targets/), or simply use the built in `Server.Import.Extras` artifact to automatically download and import the latest version.
+
+**Steps:**
   
+1. Click `Server Artifacts` in the side menu
+  ![alt text](screenshots/server.import.extras_step-0.png)
+2. Click `New Collection`
+  ![alt text](screenshots/server.import.extras_step-1.png)
+3. Find the `Server.Import.Extras` artifact ![alt text](screenshots/server.import.extras_step-2.png)
+4. Leave the default options to import everything, or remove others if you only wish to import the triage artifacts 
+  ![alt text](screenshots/server.import.extras_step-3.png)
+5.  Verify the `Windows.Triage.Targets` artifact is available under `View Artifacts` 
+  ![alt text](screenshots/server.import.extras_step-4.png)
+
 ------------------------------
 > [!IMPORTANT]  
 > **I strongly recommend deploying OpenRelik and Timesketch with HTTPS**--additional instructions for Timesketch, OpenRelik, and Velociraptor are provided [here](https://github.com/google/timesketch/blob/master/docs/guides/admin/install.md#4-enable-tls-optional), [here](https://github.com/openrelik/openrelik.org/blob/main/content/guides/nginx.md), ahd [here](https://docs.velociraptor.app/docs/deployment/security/#deployment-signed-by-lets-encrypt). For this proof of concept, we're using HTTP. Modify your configs to reflect HTTPS if you deploy for production use. 
