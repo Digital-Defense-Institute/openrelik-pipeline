@@ -5,6 +5,11 @@ on:
     tags:
       - "*" # Triggers workflow on version tags (e.g., v1.0.0)
 
+# Required for actions/create-release to create the release with the
+# default GITHUB_TOKEN.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
