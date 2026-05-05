@@ -3,21 +3,6 @@
 ### Intro
 This repository provides an all-in-one DFIR solution by deploying Timesketch, OpenRelik, Velociraptor, and the custom OpenRelik Pipeline tool via Docker Compose. It allows users to send forensic artifacts (e.g., Windows event logs or full triage acquisitions generated with Velociraptor) to an API endpoint, which triggers a workflow to upload the files to OpenRelik and generate a timeline. Depending on the configuration, the workflow can use log2timeline (Plaso) or Hayabusa to produce the timeline and push it directly into Timesketch. This automated approach streamlines artifact ingestion and analysis, turning what used to be multiple separate processes into a more convenient, “push-button” deployment. 
 
-### To do
-* <del>Add Velociraptor tags into artifacts so timelines from systems tied to an investigation by tags can all be added to the same sketch for that investigation</del>
-
-### Notes
-* There are PRs/issues to make some tweaks in some of the involved repos. 
-    * [Fix timeline names for Hayabusa CSV timelines](https://github.com/openrelik/openrelik-worker-hayabusa/issues/4)
-    * <del>[Allow users to provide the name of the sketch they want timelines to be part of if it exists instead of just the ID](https://github.com/openrelik/openrelik-worker-timesketch/pull/8)</del>
-    * <del>[Ability to set the OpenRelik admin password via an environment variable](https://github.com/openrelik/openrelik-deploy/pull/11)</del>
-    * <del>[Ability to create an OpenRelik API key without authing in the web UI](https://github.com/openrelik/openrelik-server/issues/62)
-        * This is the main reason manual intervention is required right now and that this cannot be fully scripted. You must log into the OpenRelik web UI in order to generate an API key, and then manually update your `docker-compose.yml` file for the pipeline to work.</del>
-    * <del>[Fix for generating a custom Timesketch sketch name vs an auto-generated name](https://github.com/openrelik/openrelik-worker-timesketch/pull/4)</del>
-
-### Known Bugs
-* [Timesketch postgres race condition](https://github.com/google/timesketch/issues/3263)
-
 ------------------------------
 
 ### Step 1 - Install Docker 
@@ -80,21 +65,7 @@ curl -X POST -F "file=@/path/to/your/triage.zip" http://$IP_ADDRESS:5000/api/pla
 ```
 
 #### With Velociraptor
-In the repo, we've provided [several Velociraptor artifacts](./velociraptor). 
-
-You can add them in the Velociraptor GUI in one of two ways:  
-* In the `View Artifacts` section, click the `Add an Artifact` button and manually copy paste each one and save it  
-* Via the Artifact Exchange    
-    * Click `Server Artifacts`  
-    * Click `New Collection`  
-    * Select `Server.Import.ArtifactExchange`  
-    * Click `Configure Parameters`  
-    * Click on `Server.Import.ArtifactExchange`   
-    * For the `ExchangeURL` enter the URL of `velociraptor_artifacts.zip` found [here](https://github.com/Digital-Defense-Institute/openrelik-pipeline/releases/latest)  
-    * For the tag, choose something relevant, like `OpenRelikPipeline`  
-    * Leave `ArchiveGlob` as is  
-    * Click `Launch`  
-    * You should now see all of them as `Server Monitoring` artifacts in the `Artifacts` page  
+The repo ships [several Velociraptor artifacts](./velociraptor) that POST collections to the pipeline. These are pre-imported into Velociraptor by `install.sh` — no manual import needed. Look for them in `View Artifacts` under `Server.Utils.Triage*OpenRelik*`.
 
 These are configured to hit each available endpoint:
 * `/api/plaso`
@@ -118,23 +89,8 @@ It will zip up the collection, and send it through the pipeline into OpenRelik f
 4. The newly installed monitoring artifacts will soon show up in the `Select artifact` dropdown with logs
   ![alt text](screenshots/server_events_step-3.png)
 
-### Importing Triage Artifacts
-
-The main Velociraptor package no longer includes the necessary triage artifacts by default.  
-
-You can download the `Windows.Triage.Targets` artifact from [here](https://triage.velocidex.com/docs/windows.triage.targets/), or simply use the built in `Server.Import.Extras` artifact to automatically download and import the latest version.
-
-**Steps:**
-  
-1. Click `Server Artifacts` in the side menu
-  ![alt text](screenshots/server.import.extras_step-0.png)
-2. Click `New Collection`
-  ![alt text](screenshots/server.import.extras_step-1.png)
-3. Find the `Server.Import.Extras` artifact ![alt text](screenshots/server.import.extras_step-2.png)
-4. Leave the default options to import everything, or remove others if you only wish to import the triage artifacts 
-  ![alt text](screenshots/server.import.extras_step-3.png)
-5.  Verify the `Windows.Triage.Targets` artifact is available under `View Artifacts` 
-  ![alt text](screenshots/server.import.extras_step-4.png)
+> [!NOTE]
+> When launching `Windows.Triage.Targets` (or any large collection), expand the `Resources` panel and bump `Max upload bytes` above the default 1 GB — a typical workstation's `EventLogs` alone can exceed 1 GB and the flow will be cancelled mid-upload otherwise. 10 GB (`10737418240`) is a reasonable starting point.
 
 ------------------------------
 > [!IMPORTANT]  
