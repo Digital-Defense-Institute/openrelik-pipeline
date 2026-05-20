@@ -1,3 +1,6 @@
+# Copyright 2024 Digital Defense Institute
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 import uuid
 import json

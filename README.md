@@ -96,3 +96,13 @@ It will zip up the collection, and send it through the pipeline into OpenRelik f
 > [!IMPORTANT]  
 > **I strongly recommend deploying OpenRelik and Timesketch with HTTPS**--additional instructions for Timesketch, OpenRelik, and Velociraptor are provided [here](https://github.com/google/timesketch/blob/master/docs/guides/admin/install.md#4-enable-tls-optional), [here](https://github.com/openrelik/openrelik.org/blob/main/content/guides/nginx.md), ahd [here](https://docs.velociraptor.app/docs/deployment/security/#deployment-signed-by-lets-encrypt). For this proof of concept, we're using HTTP. Modify your configs to reflect HTTPS if you deploy for production use. 
 
+------------------------------
+
+### License
+
+This project (the openrelik-pipeline source in this repository) is licensed under the [Apache License, Version 2.0](./LICENSE).
+
+Note that the upstream tools deployed by `install.sh` are governed by their own licenses and are not redistributed by this repository:
+- Timesketch, OpenRelik, Plaso, and the OpenRelik workers — Apache-2.0
+- Velociraptor and Hayabusa — AGPL-3.0
+
