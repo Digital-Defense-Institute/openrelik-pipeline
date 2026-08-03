@@ -140,6 +140,38 @@ psort.py --version || true
 # Restart the worker so it picks up the new plaso tooling
 docker compose restart openrelik-worker-plaso
 
+# --- Reconcile the OpenRelik admin user ---
+# Upstream's "[8/8] Creating admin user" step runs `admin.py create-user` with
+# stdout sent to /dev/null and never checks the exit code, then prints "Done"
+# and the password unconditionally. So both failure modes are invisible:
+#   a) the user already exists (a re-run, or a previous partial install) —
+#      create-user exits 1 and the OLD password stays in effect, while the
+#      installer cheerfully prints the NEW one, which does not work;
+#   b) the create failed outright and no user exists at all.
+# Either way the operator is left with a printed password that can't log in.
+# Reconcile it explicitly: create the user, and if it already exists, force the
+# password to the value the operator actually asked for.
+if [ -n "$OPENRELIK_ADMIN_PASSWORD" ]; then
+  echo "Verifying OpenRelik admin user..."
+  if docker compose exec -T openrelik-server python admin.py create-user admin \
+       --password "$OPENRELIK_ADMIN_PASSWORD" --admin >/dev/null 2>&1; then
+    echo "  Admin user created."
+  elif docker compose exec -T openrelik-server python admin.py change-password admin \
+       --password "$OPENRELIK_ADMIN_PASSWORD" >/dev/null 2>&1; then
+    echo "  Admin user already existed; password reset to \$OPENRELIK_ADMIN_PASSWORD."
+  else
+    echo "  ERROR: could not create or update the OpenRelik admin user." >&2
+    echo "  Fix it manually with:" >&2
+    echo "    cd /opt/openrelik && docker compose exec -T openrelik-server \\" >&2
+    echo "      python admin.py create-user admin --password 'YOUR_PASSWORD' --admin" >&2
+    exit 1
+  fi
+else
+  echo "WARNING: OPENRELIK_ADMIN_PASSWORD is not set — leaving the admin" >&2
+  echo "         credentials as printed by the OpenRelik installer above." >&2
+fi
+# ------------------------------------------
+
 # Configure OpenRelik API key
 # Target the OPENRELIK_API_KEY line directly instead of the YOUR_API_KEY
 # placeholder — placeholder-based sed silently no-ops on a re-run, leaving the
